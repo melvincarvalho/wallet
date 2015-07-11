@@ -1,0 +1,296 @@
+
+<!doctype html>
+<html lang="en" ng-app="myApp" ng-cloak>
+
+<head>
+  <title>wallet</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes">
+
+  <style>
+  [ng\:cloak], [ng-cloak], [data-ng-cloak], [x-ng-cloak], .ng-cloak, .x-ng-cloak, .ng-hide {
+    display: none !important;
+  }
+  </style>
+  <base target="_blank">
+  <link rel="stylesheet" href="bower_components/lumx/dist/lumx.css">
+  <link rel="stylesheet" href="bower_components/mdi/css/materialdesignicons.css">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="shortcut icon" type="img/png" href="images/icon.png">
+  <link rel="manifest" href="manifest.json">
+</head>
+
+<body ng-controller="Main" flow-prevent-drop flex-container="column">
+
+
+
+  <!-- Welcome page -->
+  <div class="welcome row grad-bg" ng-hide="loggedIn">
+    <div class="absolute-center tc-black-1">
+      <div class="welcome-title">
+        <span class="icon icon--xl icon--flat mdi mdi-wallet-travel tc-black-1"></span>
+        <span class="app-name fs-display-2">Wallet</span>
+      </div>
+      <div class="mt fs-subhead">Your virtual wallet</div>
+      <div>
+        <button ng-audio="audio/button-3.mp3" class="btn btn--xl  bgc-grey-300 btn--raised" lx-ripple aria-label="Login" ng-click="TLSlogin()">
+          <span>{{loginTLSButtonText}}</span>
+        </button>
+      </div>
+    </div>
+  </div>
+  <!-- End Welcome page -->
+
+
+  <!-- logged in -->
+  <div class="welcome row grad-bg" ng-hide="!loggedIn">
+
+    <!-- header -->
+    <div class="card">
+      <div class="toolbar bgc-indigo-500 tc-white">
+        <div class="toolbar__left mr+++">
+          <button class="btn btn--l btn--white btn--icon" lx-ripple>
+            <i class="mdi mdi-menu"></i>
+          </button>
+        </div>
+        <span class="toolbar__label fs-title">{{main.description}}</span>
+        <div>
+          <img ng-hide="!my.picture" height="36" width="36" style="border-radius : 50%" ng-src="{{my.picture}}" alt="picture"/>
+          <img ng-hide="my.picture" height="36" width="36" style="border-radius : 50%" ng-src="images/generic_photo.png" alt="picture"/>
+        </div>
+        <span class="toolbar__right fs-title" style="padding-left: 20px">{{my.name}}</span>
+        <div class="toolbar__right">
+          <lx-dropdown position="right" from-top>
+            <button class="btn btn--l btn--white btn--icon" lx-ripple lx-dropdown-toggle>
+              <i class="mdi mdi-dots-vertical"></i>
+            </button>
+            <lx-dropdown-menu>
+              <ul>
+                <li><a ng-click="openDialog('about')" class="dropdown-link">About</a></li>
+                <li><a ng-click="refresh()" class="dropdown-link">Refresh</a></li>
+                <li><a ng-click="logout()" class="dropdown-link">Logout</a></li>
+              </ul>
+            </lx-dropdown-menu>
+          </lx-dropdown>
+        </div>
+      </div>
+    </div>
+    <!-- end header -->
+
+
+    <div class="tc-white-1" flex-container="row">
+
+      <!-- sidebar -->
+      <div class="tc-white bgc-indigo-500" flex-item="1" flex-item-order="1">
+        <div class="sidebar sidebar--shown" ng-class="{'sidebar--shown': isVisible()}">
+          <div class="sidebar-menu tc-white">
+
+            <div style="padding-top : 50px"><p></p></div>
+            <div ng-repeat="n in wallets">
+              <a ng-audio="audio/button-3.mp3" ng-click=display(n.id)>{{n.description}}</a>
+            </div>
+
+          </div>
+        </div>
+      </div>
+      <!-- end sidebar -->
+
+
+
+      <div flex-item-order="2">
+        <div>
+          <lx-tabs links-tc="light" links-bgc="indigo-500" indicator="yellow-500" no-divider="true" z-depth="1">
+            <lx-tab heading="Balance">
+
+
+
+
+
+
+
+
+
+
+
+              <div class="data-table-container">
+                <header class="data-table-header">
+                  <div class="data-table-header__label">
+                    <span ng-hide="!main.amount" class="tc-black">Balance: {{main.amount}} (<a href="{{wallet}}">Wallet</a>)</span>
+                  </div>
+
+                  <div class="data-table-header__actions">
+                    <button class="btn btn--l btn--black btn--icon" lx-ripple>
+                      <i class="mdi mdi-filter-variant"></i>
+                    </button>
+
+                    <lx-dropdown position="right" over-toggle="true">
+                      <button class="btn btn--l btn--black btn--icon" lx-ripple lx-dropdown-toggle>
+                        <i class="mdi mdi-dots-vertical"></i>
+                      </button>
+
+                      <lx-dropdown-menu>
+                        <ul>
+                          <li><a class="dropdown-link">Action</a></li>
+                          <li><a class="dropdown-link">Another action</a></li>
+                          <li><a class="dropdown-link">Something else here</a></li>
+                          <li class="dropdown-divider"></li>
+                          <li><a class="dropdown-link dropdown-link--is-header">Header</a></li>
+                          <li><a class="dropdown-link">Separated link</a></li>
+                        </ul>
+                      </lx-dropdown-menu>
+                    </lx-dropdown>
+                  </div>
+                </header>
+
+                <table class="data-table tc-black">
+                  <thead>
+                    <tr class="data-table">
+                      <th>When</th>
+                      <th>Source</th>
+                      <th class="gold">Amount</th>
+                      <th>Why</th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+
+                    <tr ng-repeat="t in main.tx" class="data-table">
+                      <td><time is="relative-time" datetime="{{t.timestamp}}"></time></td>
+                      <td>{{t.source === user ? t.destination : t.source}}</td>
+                      <td class="gold {{t.source === user ? 'minus' : 'plus'}}">{{t.source === user ? -t.amount : t.amount}}</td>
+                      <td>{{t.description}}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+            </lx-tab>
+
+            <lx-tab heading="Pay">
+
+              <div flex-item>
+                <lx-select ng-model="friends" placeholder="Lorem Ipsum" choices="friends" floating-label>
+                  <lx-select-selected>
+                    {{ friends[0] }}
+                  </lx-select-selected>
+
+                  <lx-select-choices>
+                    {{ friends }}
+                  </lx-select-choices>
+                </lx-select>
+              </div>
+
+              <div flex-container="row" flex-gutter="24">
+                <div flex-item>
+                  <lx-text-field label="Amount">
+                    <input type="text" ng-model="input">
+                  </lx-text-field>
+                </div>
+              </div>
+
+              <button class="btn btn--m btn--blue btn--raised" lx-ripple>Pay</button>
+
+            </lx-tab>
+
+            <lx-tab heading="Withdraw">
+
+              <div flex-container="row" flex-gutter="24">
+                <div flex-item>
+                  <lx-text-field label="Amount">
+                    <input type="text" ng-model="input">
+                  </lx-text-field>
+                </div>
+              </div>
+
+              <button class="btn btn--m btn--blue btn--raised" lx-ripple>Withdraw</button>
+
+            </lx-tab>
+          </lx-tabs>
+        </div>
+
+
+
+      </div>
+    </div>
+
+
+
+  </div>
+
+
+
+
+
+
+
+
+  <!-- About -->
+  <lx-dialog class="dialog dialog--l" auto-close="true" id="about">
+    <div class="dialog__header">
+      <div class="toolbar bgc-blue-A700 pl+">
+        <span class="toolbar__label tc-white fs-title">
+          About wallet
+        </span>
+        <div class="toolbar__right">
+          <button class="btn btn--l btn--white btn--icon" lx-ripple lx-dialog-close>
+            <span aria-hidden="true" class="mdi mdi-close"></span>
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="dialog__content p+">
+      <p>wallet is a personal data wallet, that uses Linked Data to store data on your personal online datastore.</p>
+      <br>
+      <p>This application follows the <a href="https://github.com/linkeddata/SoLiD/">SoLiD specifications</a> to ensure that your data stays private.</p>
+    </div>
+    <div class="dialog__actions">
+      <button class="btn btn--m btn--black btn--flat" lx-ripple lx-dialog-close>Close</button>
+    </div>
+  </lx-dialog>
+
+
+  <!-- Deps -->
+  <script src="bower_components/jquery/dist/jquery.min.js"></script>
+  <script src="bower_components/velocity/velocity.min.js"></script>
+  <script src="bower_components/angular/angular.min.js"></script>
+  <script src="bower_components/angular-ui/build/angular-ui.min.js"></script>
+  <script src="bower_components/lumx/dist/lumx.min.js"></script>
+  <script src="bower_components/angular-audio/app/angular.audio.js"></script>
+  <script src="bower_components/dexie/dist/latest/Dexie.js"></script>
+  <script src="bower_components/time-elements/time-elements.js"></script>
+
+  <script src="vendor/rdflib.min.js"></script>
+  <script src="vendor/common.js"></script>
+  <script src="vendor/sha256.js"></script>  <!-- App -->
+
+  <!-- App -->
+  <script src="app/app.js"></script>
+</body>
+
+</html>
