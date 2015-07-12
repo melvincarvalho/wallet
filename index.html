@@ -97,22 +97,19 @@
 
 
 
-      <div flex-item-order="2">
+      <div class="bgc-white" flex-item-order="2">
         <div>
+
+          <!--          -->
+          <!-- main tab -->
+          <!--          -->
           <lx-tabs links-tc="light" links-bgc="indigo-500" indicator="yellow-500" no-divider="true" z-depth="1">
-            <lx-tab heading="Balance">
+            <lx-tab class="bgc-white" heading="Balance">
 
 
 
 
-
-
-
-
-
-
-
-              <div class="data-table-container">
+              <div ng-hide="!wallet" class="data-table-container">
                 <header class="data-table-header">
                   <div class="data-table-header__label">
                     <span ng-hide="!main.amount" class="tc-black">Balance: {{main.amount}} (<a href="{{wallet}}">Wallet</a>)</span>
@@ -164,44 +161,31 @@
                 </table>
               </div>
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+              <div class="tc-black" ng-hide="wallet">Please select a wallet, from the left hand panel, or add some to your WebID</div>
 
 
 
 
             </lx-tab>
+            <!--          -->
+            <!-- main tab -->
+            <!--          -->
 
-            <lx-tab heading="Pay">
 
-              <div flex-item>
-                <lx-select ng-model="friends" placeholder="Lorem Ipsum" choices="friends" floating-label>
+            <!--         -->
+            <!-- pay tab -->
+            <!--         -->
+            <lx-tab class="bgc-white  tc-black" heading="Pay">
+
+
+              <div class="bgc-white tc-black" flex-item>
+                <lx-select ng-model="selects.friend" placeholder="Pay" choices="friends" floating-label>
                   <lx-select-selected>
-                    {{ friends[0] }}
+                    {{ $selected.name }}
                   </lx-select-selected>
 
-                  <lx-select-choices>
-                    {{ friends }}
+                  <lx-select-choices class="bgc-white tc-black">
+                    {{ $choice.name }}
                   </lx-select-choices>
                 </lx-select>
               </div>
@@ -209,14 +193,17 @@
               <div flex-container="row" flex-gutter="24">
                 <div flex-item>
                   <lx-text-field label="Amount">
-                    <input type="text" ng-model="input">
+                    <input type="text" ng-model="selects.amount">
                   </lx-text-field>
                 </div>
               </div>
 
-              <button class="btn btn--m btn--blue btn--raised" lx-ripple>Pay</button>
+              <button class="btn btn--m btn--blue btn--raised" ng-click="pay()"  lx-ripple>Pay</button>
 
             </lx-tab>
+            <!--         -->
+            <!-- pay tab -->
+            <!--         -->
 
             <lx-tab heading="Withdraw">
 
@@ -271,6 +258,30 @@
     </div>
     <div class="dialog__actions">
       <button class="btn btn--m btn--black btn--flat" lx-ripple lx-dialog-close>Close</button>
+    </div>
+  </lx-dialog>
+
+  <!-- pay -->
+  <lx-dialog class="dialog dialog--l" auto-close="true" id="pay">
+    <div class="dialog__header">
+      <div class="toolbar bgc-blue-A700 pl+">
+        <span class="toolbar__label tc-white fs-title">
+          Confirm Payment
+        </span>
+        <div class="toolbar__right">
+          <button class="btn btn--l btn--white btn--icon" lx-ripple lx-dialog-close>
+            <span aria-hidden="true" class="mdi mdi-close"></span>
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="dialog__content p+">
+      <p>Would you like to pay {{selects.amount}} bits to {{selects.friend.name}}</p>
+      <br>
+    </div>
+    <div class="dialog__actions">
+        <button class="btn btn--m btn--black btn--flat" lx-ripple lx-dialog-close ng-click="sendPayment()">OK</button>
+        <button class="btn btn--m btn--black btn--flat" lx-ripple lx-dialog-close>Cancel</button>
     </div>
   </lx-dialog>
 

@@ -67,6 +67,7 @@ App.controller('Main', function($scope, $http, $location, $timeout, $sce, ngAudi
     $scope.initUI();
     $scope.subs = [];
     $scope.sockets = [];
+    $scope.selects = {};
     $scope.main = {'description' : 'wallet'};
 
     // start browser cache DB
@@ -76,17 +77,7 @@ App.controller('Main', function($scope, $http, $location, $timeout, $sce, ngAudi
     });
     db.open();
 
-    $scope.show = {
-      profile: true,
-      knows: false,
-      queue: false,
-      storage: false,
-      seeAlso: false,
-      wallet: false,
-      preferences: false,
-      workspaces: false,
-      keys: false,
-    };
+    $scope.show = {};
 
   };
 
@@ -210,7 +201,7 @@ App.controller('Main', function($scope, $http, $location, $timeout, $sce, ngAudi
 
       var inbox = g.statementsMatching($rdf.sym(wallet.id), CURR('inbox'));
       console.log(inbox);
-      if (description.length) {
+      if (inbox.length) {
         wallet.inbox = inbox[0].object.value;
       }
 
@@ -396,6 +387,12 @@ App.controller('Main', function($scope, $http, $location, $timeout, $sce, ngAudi
     $http.get(balanceURI).
     success(function(data, status, headers, config) {
       $scope.main.amount = data.amount;
+      var wallet = getById($scope.wallets, $scope.wallet);
+      if (!wallet.ledger) {
+        wallet.ledger = {};
+      }
+      wallet.ledger[$scope.user] = data.amount;
+      wallet.amount = data.amount;
     }).
     error(function(data, status, headers, config) {
       // log error
@@ -485,31 +482,6 @@ App.controller('Main', function($scope, $http, $location, $timeout, $sce, ngAudi
   };
 
   $scope.save = function() {
-    var position = $scope.position;
-    if (!position) {
-      LxNotificationService.error('position is empty');
-      return;
-    }
-    console.log(position);
-
-    $http({
-      method: 'PUT',
-      url: $scope.storageURI,
-      withCredentials: true,
-      headers: {
-        "Content-Type": "text/turtle"
-      },
-      data: '<#this> '+ URN('fen') +' """' + position + '""" .',
-    }).
-    success(function(data, status, headers) {
-      LxNotificationService.success('Position saved');
-      $location.search('storageURI', $scope.storageURI);
-      $scope.renderBoard(position);
-    }).
-    error(function(data, status, headers) {
-      LxNotificationService.error('could not save position');
-    });
-
   };
 
   $scope.TLSlogin = function() {
@@ -613,6 +585,7 @@ App.controller('Main', function($scope, $http, $location, $timeout, $sce, ngAudi
           $scope.audio.play();
           $scope.render();
           fetchTx();
+          fetchBalance();
 
 					Notification.requestPermission(function (permission) {
 						// If the user is okay, let's create a notification
@@ -636,6 +609,107 @@ App.controller('Main', function($scope, $http, $location, $timeout, $sce, ngAudi
 
 		}
 	}
+
+
+  // EVENTS
+  //
+  //
+  $scope.validatePay = function() {
+
+  };
+
+  $scope.pay = function(id) {
+    var source = $scope.user;
+    var destination = $scope.selects.friend.id;
+    var amount = $scope.selects.amount;
+
+    var err = '';
+
+    if(!amount) err +=('Please enter an amount\n');
+
+    if (isNaN(amount)) err += ('Amount must be a number');
+    amount = parseFloat(amount);
+
+    if(err !== '') {
+      alert(err);
+      return false;
+    }
+
+
+    var wc = '<>  a <https://w3id.org/cc#Credit> ;\n';
+    wc += '  <https://w3id.org/cc#source> \n    <' + source + '> ;\n';
+    wc += '  <https://w3id.org/cc#destination> \n    <' + destination + '> ;\n';
+    wc += '  <https://w3id.org/cc#amount> "' + amount + '" ;\n';
+    wc += '  <https://w3id.org/cc#currency> \n    <https://w3id.org/cc#bit> .\n';
+
+    var hash = CryptoJS.SHA256(source).toString();
+
+    function postFile(file, data) {
+      xhr = new XMLHttpRequest();
+      xhr.open('POST', file, false);
+      xhr.setRequestHeader('Content-Type', 'text/turtle; charset=UTF-8');
+      xhr.send(data);
+    }
+
+    //postFile( + hash + '/', wc);
+    console.log(wc);
+
+    $scope.openDialog('pay');
+
+  };
+
+
+  $scope.sendPayment = function() {
+    var source = $scope.user;
+    var destination = $scope.selects.friend.id;
+    var amount = $scope.selects.amount;
+
+    var err = '';
+
+    if(!amount) err +=('Please enter an amount\n');
+
+    if (isNaN(amount)) err += ('Amount must be a number');
+    amount = parseFloat(amount);
+
+    if(err !== '') {
+      alert(err);
+      return false;
+    }
+
+
+    var wc = '<#this>  a <https://w3id.org/cc#Credit> ;\n';
+    wc += '  <https://w3id.org/cc#source> \n    <' + source + '> ;\n';
+    wc += '  <https://w3id.org/cc#destination> \n    <' + destination + '> ;\n';
+    wc += '  <https://w3id.org/cc#amount> "' + amount + '" ;\n';
+    wc += '  <https://w3id.org/cc#currency> \n    <https://w3id.org/cc#bit> .\n';
+
+    var hash = CryptoJS.SHA256(source).toString();
+
+    function postFile(file, data) {
+      xhr = new XMLHttpRequest();
+      xhr.open('POST', file, false);
+      xhr.setRequestHeader('Content-Type', 'text/turtle; charset=UTF-8');
+      xhr.send(data);
+    }
+
+    //postFile( + hash + '/', wc);
+    console.log(wc);
+
+    var tx = $scope.wallet;
+
+    var wallet = getById($scope.wallets, $scope.wallet);
+
+    console.log(wallet);
+
+    postFile(wallet.inbox + hash + '/', wc);
+
+
+  };
+
+
+
+
+
 
 
   $scope.initApp();
