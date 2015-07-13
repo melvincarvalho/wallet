@@ -137,7 +137,7 @@
                   </div>
                 </header>
 
-                <table class="data-table tc-black">
+                <table ng-show="main.tx.length" class="data-table tc-black">
                   <thead>
                     <tr class="data-table">
                       <th>When</th>
@@ -157,6 +157,8 @@
                     </tr>
                   </tbody>
                 </table>
+                <div ng-hide="main.tx.length" class="data-table tc-black">No Transaction History Yet.</div>
+
               </div>
 
               <div class="tc-black" ng-hide="wallet">Please select a wallet, from the left hand panel, or add some to your WebID</div>

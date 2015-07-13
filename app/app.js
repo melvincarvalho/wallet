@@ -28,6 +28,9 @@ var DEBUG = true;
 var scope = {};
 var gg;
 
+var defaultWallets = ['https://wallet.databox.me/Public/.wallet/github.com/melvincarvalho/wallet/wallet#this',
+  'https://wallet.databox.me/Public/.wallet/github.com/linkeddata/SoLiD/wallet#this'];
+
 $rdf.Fetcher.crossSiteProxyTemplate=PROXY;
 
 var App = angular.module('myApp', [
@@ -178,9 +181,10 @@ App.controller('Main', function($scope, $http, $location, $timeout, $sce, ngAudi
   };
 
   $scope.renderWallets = function() {
+    var i;
     console.log('rendering wallets');
-    if (!$scope.wallets) $scope.wallets = [];
-    for (var i=0; i<$scope.wallets.length; i++) {
+
+    for (i=0; i<$scope.wallets.length; i++) {
 
       var wallet = $scope.wallets[i];
       if (!wallet.id) continue;
@@ -243,6 +247,11 @@ App.controller('Main', function($scope, $http, $location, $timeout, $sce, ngAudi
     var workspaces;
     console.log('updating queue');
     addToQueue($scope.queue, $scope.user);
+
+    for (i=0; i<defaultWallets.length; i++) {
+      addToIds($scope.wallets, {'id': defaultWallets[i]});
+      addToQueue($scope.queue, defaultWallets[i]);
+    }
 
     workspaces = g.statementsMatching($rdf.sym($scope.user), PIM('storage'), undefined);
     for (i=0; i<workspaces.length; i++) {
