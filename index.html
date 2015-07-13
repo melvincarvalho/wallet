@@ -103,7 +103,7 @@
           <!--          -->
           <!-- main tab -->
           <!--          -->
-          <lx-tabs links-tc="light" links-bgc="indigo-500" indicator="yellow-500" no-divider="true" z-depth="1">
+          <lx-tabs links-tc="light" links-bgc="indigo-500" active-tab="activeTab" indicator="yellow-500" no-divider="true" z-depth="1">
             <lx-tab class="bgc-white" heading="Balance">
 
 
@@ -112,7 +112,7 @@
               <div ng-hide="!wallet" class="data-table-container">
                 <header class="data-table-header">
                   <div class="data-table-header__label">
-                    <span ng-hide="!main.amount" class="tc-black">Balance: {{main.amount}} (<a href="{{wallet}}">Wallet</a>) <span ng-hide="!today">Today : {{today}}</span></span>
+                    <span ng-hide="isNaN(main.amount)" class="tc-black">Balance: {{main.amount}} (<a href="{{wallet}}">{{main.description}}</a>) <span ng-hide="!today">Today : {{today}}</span></span>
                   </div>
 
                   <div class="data-table-header__actions">
@@ -128,8 +128,6 @@
                       <lx-dropdown-menu>
                         <ul>
                           <li><a class="dropdown-link">Action</a></li>
-                          <li><a class="dropdown-link">Another action</a></li>
-                          <li><a class="dropdown-link">Something else here</a></li>
                           <li class="dropdown-divider"></li>
                           <li><a class="dropdown-link dropdown-link--is-header">Header</a></li>
                           <li><a class="dropdown-link">Separated link</a></li>
@@ -153,7 +151,7 @@
 
                     <tr ng-repeat="t in main.tx" class="data-table">
                       <td><time is="relative-time" datetime="{{t.timestamp}}"></time></td>
-                      <td>{{t.source === user ? t.destination : t.source}}</td>
+                      <td>{{t.name}}</td>
                       <td class="gold {{t.source === user ? 'minus' : 'plus'}}">{{t.source === user ? -t.amount : t.amount}}</td>
                       <td>{{t.description}}</td>
                     </tr>
@@ -215,7 +213,7 @@
                 </div>
               </div>
 
-              <button class="btn btn--m btn--blue btn--raised" lx-ripple>Withdraw</button>
+              <button class="btn btn--m btn--blue btn--raised" ng-click="withdraw()" lx-ripple>Withdraw</button>
 
             </lx-tab>
           </lx-tabs>
@@ -266,7 +264,7 @@
     <div class="dialog__header">
       <div class="toolbar bgc-blue-A700 pl+">
         <span class="toolbar__label tc-white fs-title">
-          Confirm Payment
+          {{main.description}}
         </span>
         <div class="toolbar__right">
           <button class="btn btn--l btn--white btn--icon" lx-ripple lx-dialog-close>

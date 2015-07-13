@@ -230,6 +230,7 @@ App.controller('Main', function($scope, $http, $location, $timeout, $sce, ngAudi
     fetchBalance(wallet);
     fetchTx(wallet);
     $scope.render();
+    $scope.activeTab = 0;
   };
 
 
@@ -412,6 +413,16 @@ App.controller('Main', function($scope, $http, $location, $timeout, $sce, ngAudi
       $scope.main.tx = data;
       $scope.today = 0;
       for (var i=0; i<data.length; i++) {
+        var name = data[i].source;
+        if (name === $scope.user) name = data[i].destination;
+        for (var j=0; j<$scope.friends.length; j++) {
+          if ($scope.friends[j].id === name) {
+            if ($scope.friends[j].name) {
+              name = $scope.friends[j].name;
+            }
+          }
+        }
+        data[i].name = name;
         if (new Date(data[i].timestamp).toISOString().substr(0,10) === new Date().toISOString().substr(0,10)) {
           if (data[i].destination === $scope.user) {
             $scope.today += data[i].amount;
@@ -458,6 +469,10 @@ App.controller('Main', function($scope, $http, $location, $timeout, $sce, ngAudi
     if (!array) return;
     for (var i=0; i<array.length; i++) {
       if (array[i].id === el.id) {
+        //array[i] = el;
+        if (el.name) {
+          array[i].name = el.name;
+        }
         return;
       }
     }
@@ -646,8 +661,14 @@ App.controller('Main', function($scope, $http, $location, $timeout, $sce, ngAudi
 
   };
 
+  $scope.withdraw = function(wallet) {
+    alert('not yet implemented on this wallet');
+  };
+
+
   $scope.pay = function(id) {
     var source = $scope.user;
+    if (!$scope.selects.friend || !$scope.selects.friend.id) alert ('destination is required');
     var destination = $scope.selects.friend.id;
     var amount = $scope.selects.amount;
 
