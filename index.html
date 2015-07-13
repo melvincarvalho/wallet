@@ -112,7 +112,7 @@
               <div ng-hide="!wallet" class="data-table-container">
                 <header class="data-table-header">
                   <div class="data-table-header__label">
-                    <span ng-hide="!main.amount" class="tc-black">Balance: {{main.amount}} (<a href="{{wallet}}">Wallet</a>)</span>
+                    <span ng-hide="!main.amount" class="tc-black">Balance: {{main.amount}} (<a href="{{wallet}}">Wallet</a>) <span ng-hide="!today">Today : {{today}}</span></span>
                   </div>
 
                   <div class="data-table-header__actions">
