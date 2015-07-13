@@ -18,6 +18,7 @@ var RDFS  = $rdf.Namespace("http://www.w3.org/2000/01/rdf-schema#");
 var SIOC  = $rdf.Namespace("http://rdfs.org/sioc/ns#");
 var SOLID = $rdf.Namespace("http://www.w3.org/ns/solid/app#");
 var URN   = $rdf.Namespace("urn:");
+var VCARD = $rdf.Namespace("http://www.w3.org/2006/vcard/ns#");
 
 var AUTHENDPOINT = "https://databox.me/";
 var PROXY = "https://rww.io/proxy.php?uri={uri}";
@@ -67,7 +68,9 @@ App.controller('Main', function($scope, $http, $location, $timeout, $sce, ngAudi
     $scope.initUI();
     $scope.subs = [];
     $scope.sockets = [];
+    $scope.selects = {};
     $scope.main = {'description' : 'wallet'};
+
 
     // start browser cache DB
     db = new Dexie("chrome:theSession");
@@ -76,25 +79,17 @@ App.controller('Main', function($scope, $http, $location, $timeout, $sce, ngAudi
     });
     db.open();
 
-    $scope.show = {
-      profile: true,
-      knows: false,
-      queue: false,
-      storage: false,
-      seeAlso: false,
-      wallet: false,
-      preferences: false,
-      workspaces: false,
-      keys: false,
-    };
+    $scope.show = {};
 
   };
 
   $scope.initUI = function() {
+    $scope.defaultSound = 'audio/button-3.mp3';
     $scope.initialized = true;
     $scope.loggedIn = false;
     $scope.loginTLSButtonText = "Login";
-    $scope.audio = ngAudio.load('audio/button-3.mp3');
+    $scope.audio = ngAudio.load($scope.defaultSound);
+    $scope.audioAlt = undefined;
   };
 
   $scope.initStore = function() {
@@ -191,30 +186,31 @@ App.controller('Main', function($scope, $http, $location, $timeout, $sce, ngAudi
       if (!wallet.id) continue;
 
       var description = g.statementsMatching($rdf.sym(wallet.id), DCT('description'));
-      console.log(description);
       if (description.length) {
         wallet.description = description[0].object.value;
       }
 
       var api = g.statementsMatching($rdf.sym(wallet.id), CURR('api'));
-      console.log(api);
       if (description.length) {
         wallet.api = api[0].object.value;
       }
 
       var tx = g.statementsMatching($rdf.sym(wallet.id), CURR('tx'));
-      console.log(tx);
       if (tx.length) {
         wallet.trades = tx[0].object.value;
       }
 
       var inbox = g.statementsMatching($rdf.sym(wallet.id), CURR('inbox'));
-      console.log(inbox);
-      if (description.length) {
+      if (inbox.length) {
         wallet.inbox = inbox[0].object.value;
       }
 
-      console.log($scope.wallets[i]);
+      var hasSound = g.statementsMatching($rdf.sym(wallet.id), VCARD('hasSound'));
+      if (hasSound.length) {
+        wallet.hasSound = hasSound[0].object.value;
+      }
+
+      //console.log($scope.wallets[i]);
 
     }
 
@@ -396,6 +392,12 @@ App.controller('Main', function($scope, $http, $location, $timeout, $sce, ngAudi
     $http.get(balanceURI).
     success(function(data, status, headers, config) {
       $scope.main.amount = data.amount;
+      var wallet = getById($scope.wallets, $scope.wallet);
+      if (!wallet.ledger) {
+        wallet.ledger = {};
+      }
+      wallet.ledger[$scope.user] = data.amount;
+      wallet.amount = data.amount;
     }).
     error(function(data, status, headers, config) {
       // log error
@@ -408,6 +410,14 @@ App.controller('Main', function($scope, $http, $location, $timeout, $sce, ngAudi
     $http.get(balanceURI).
     success(function(data, status, headers, config) {
       $scope.main.tx = data;
+      $scope.today = 0;
+      for (var i=0; i<data.length; i++) {
+        if (new Date(data[i].timestamp).toISOString().substr(0,10) === new Date().toISOString().substr(0,10)) {
+          if (data[i].destination === $scope.user) {
+            $scope.today += data[i].amount;
+          }
+        }
+      }
     }).
     error(function(data, status, headers, config) {
       // log error
@@ -426,7 +436,6 @@ App.controller('Main', function($scope, $http, $location, $timeout, $sce, ngAudi
   // HELPER functions
   //
   //
-
   function addToArray(array, el) {
     if (!array) return;
     if (array.indexOf(el) === -1) {
@@ -485,31 +494,6 @@ App.controller('Main', function($scope, $http, $location, $timeout, $sce, ngAudi
   };
 
   $scope.save = function() {
-    var position = $scope.position;
-    if (!position) {
-      LxNotificationService.error('position is empty');
-      return;
-    }
-    console.log(position);
-
-    $http({
-      method: 'PUT',
-      url: $scope.storageURI,
-      withCredentials: true,
-      headers: {
-        "Content-Type": "text/turtle"
-      },
-      data: '<#this> '+ URN('fen') +' """' + position + '""" .',
-    }).
-    success(function(data, status, headers) {
-      LxNotificationService.success('Position saved');
-      $location.search('storageURI', $scope.storageURI);
-      $scope.renderBoard(position);
-    }).
-    error(function(data, status, headers) {
-      LxNotificationService.error('could not save position');
-    });
-
   };
 
   $scope.TLSlogin = function() {
@@ -574,68 +558,186 @@ App.controller('Main', function($scope, $http, $location, $timeout, $sce, ngAudi
       }
     }
 
-	}
+  }
 
 
 
-	function connectToSocket(sub, subs) {
-		var socket;
+  function connectToSocket(sub, subs) {
+    var socket;
 
-		// socket
-		if ( subs.indexOf(sub) !== -1 ) {
-			//console.log('Already subscribed to : ' + sub);
-		} else {
-			var wss = getWss(sub);
-			if ($scope.subs.indexOf(wss) === -1) {
-				console.log("Opening socket to : " + wss);
-				$scope.subs.push(wss);
-				socket = new WebSocket(wss);
-				$scope.sockets.push(socket);
+    // socket
+    if ( subs.indexOf(sub) !== -1 ) {
+      //console.log('Already subscribed to : ' + sub);
+    } else {
+      var wss = getWss(sub);
+      if ($scope.subs.indexOf(wss) === -1) {
+        console.log("Opening socket to : " + wss);
+        //$scope.subs.push(wss);
+        socket = new WebSocket(wss);
+        $scope.sockets.push(socket);
 
-				socket.onopen = function(){
-					console.log(this);
-					console.log(sub);
-				};
+        socket.onopen = function(){
+          console.log(this);
+          console.log(sub);
+        };
 
-				socket.onmessage = function(msg){
-					console.log('Incoming message : ');
-					var a = msg.data.split(' ');
-					console.log(a[1]);
-					addToQueue($scope.queue, a[1]);
-					addToQueue($scope.queue, a[1] + '*');
-					$scope.invalidate(a[1] + '*');
-					db.cache.delete(a[1] + '*').then(function() {
-						fetch(a[1] + '*');
-					});
-					var today = new Date().toISOString().substr(0,10);
+        socket.onmessage = function(msg){
+          console.log('Incoming message : ');
+          var a = msg.data.split(' ');
+          console.log(a[1]);
+          //addToQueue($scope.queue, a[1]);
+          //addToQueue($scope.queue, a[1] + '*');
+          //$scope.invalidate(a[1] + '*');
+          //db.cache.delete(a[1] + '*').then(function() {
+          //	fetch(a[1] + '*');
+          //});
+          //var today = new Date().toISOString().substr(0,10);
 
-          $scope.invalidate(a[1]);
-          $scope.audio.play();
+          //$scope.invalidate(a[1]);
           $scope.render();
           fetchTx();
+          fetchBalance();
 
-					Notification.requestPermission(function (permission) {
-						// If the user is okay, let's create a notification
-						if (permission === "granted") {
-							notify = true;
-						}
-					});
-				};
-
-			} else {
-				socket = $scope.sockets[$scope.subs.indexOf(wss)];
-			}
+          var wallet = getWalletByTx(a[1], CryptoJS.SHA256($scope.user));
+          if (wallet && wallet.hasSound && wallet.hasSound !== $scope.defaultSound) {
+            $scope.audioAlt = ngAudio.load(wallet.hasSound);
+            $scope.audioAlt.play();
+          } else {
+            $scope.audio.play();
+          }
 
 
+          Notification.requestPermission(function (permission) {
+            // If the user is okay, let's create a notification
+            if (permission === "granted") {
+              notify = true;
+            }
+          });
+        };
 
-			subs.push(sub);
-			setTimeout(function(){
-				sendSub('sub ' + sub, socket);
-			}, 1000);
+      } else {
+        socket = $scope.sockets[$scope.subs.indexOf(wss)];
+      }
 
 
-		}
-	}
+
+      subs.push(sub);
+      setTimeout(function(){
+        sendSub('sub ' + sub, socket);
+      }, 1000);
+
+
+    }
+  }
+
+
+  function getWalletByTx(ldpc, hash) {
+    for (var i=0; i<$scope.wallets.length; i++) {
+      if ($scope.wallets[i].trades + hash + '/' === ldpc) {
+        return $scope.wallets[i];
+      }
+    }
+  }
+
+  // EVENTS
+  //
+  //
+  $scope.validatePay = function() {
+
+  };
+
+  $scope.pay = function(id) {
+    var source = $scope.user;
+    var destination = $scope.selects.friend.id;
+    var amount = $scope.selects.amount;
+
+    var err = '';
+
+    if(!amount) err +=('Please enter an amount\n');
+
+    if (isNaN(amount)) err += ('Amount must be a number');
+    amount = parseFloat(amount);
+
+    if(err !== '') {
+      alert(err);
+      return false;
+    }
+
+
+    var wc = '<>  a <https://w3id.org/cc#Credit> ;\n';
+    wc += '  <https://w3id.org/cc#source> \n    <' + source + '> ;\n';
+    wc += '  <https://w3id.org/cc#destination> \n    <' + destination + '> ;\n';
+    wc += '  <https://w3id.org/cc#amount> "' + amount + '" ;\n';
+    wc += '  <https://w3id.org/cc#currency> \n    <https://w3id.org/cc#bit> .\n';
+
+    var hash = CryptoJS.SHA256(source).toString();
+
+    function postFile(file, data) {
+      xhr = new XMLHttpRequest();
+      xhr.open('POST', file, false);
+      xhr.setRequestHeader('Content-Type', 'text/turtle; charset=UTF-8');
+      xhr.send(data);
+    }
+
+    //postFile( + hash + '/', wc);
+    console.log(wc);
+
+    $scope.openDialog('pay');
+
+  };
+
+
+  $scope.sendPayment = function() {
+    var source = $scope.user;
+    var destination = $scope.selects.friend.id;
+    var amount = $scope.selects.amount;
+
+    var err = '';
+
+    if(!amount) err +=('Please enter an amount\n');
+
+    if (isNaN(amount)) err += ('Amount must be a number');
+    amount = parseFloat(amount);
+
+    if(err !== '') {
+      alert(err);
+      return false;
+    }
+
+
+    var wc = '<#this>  a <https://w3id.org/cc#Credit> ;\n';
+    wc += '  <https://w3id.org/cc#source> \n    <' + source + '> ;\n';
+    wc += '  <https://w3id.org/cc#destination> \n    <' + destination + '> ;\n';
+    wc += '  <https://w3id.org/cc#amount> "' + amount + '" ;\n';
+    wc += '  <https://w3id.org/cc#currency> \n    <https://w3id.org/cc#bit> .\n';
+
+    var hash = CryptoJS.SHA256(source).toString();
+
+    function postFile(file, data) {
+      xhr = new XMLHttpRequest();
+      xhr.open('POST', file, false);
+      xhr.setRequestHeader('Content-Type', 'text/turtle; charset=UTF-8');
+      xhr.send(data);
+    }
+
+    //postFile( + hash + '/', wc);
+    console.log(wc);
+
+    var tx = $scope.wallet;
+
+    var wallet = getById($scope.wallets, $scope.wallet);
+
+    console.log(wallet);
+
+    postFile(wallet.inbox + hash + '/', wc);
+
+
+  };
+
+
+
+
+
 
 
   $scope.initApp();
