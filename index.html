@@ -153,7 +153,8 @@
                       <td><time is="relative-time" datetime="{{t.timestamp}}"></time></td>
                       <td>{{t.name}}</td>
                       <td class="gold {{t.source === user ? 'minus' : 'plus'}}">{{t.source === user ? -t.amount : t.amount}}</td>
-                      <td>{{t.description}}</td>
+                      <td ng-hide="t.description.indexOf('http') "><a href={{t.description}}>Github</a></td>
+                      <td ng-show="t.description.indexOf('http') ">{{t.description | limitTo:70}}</td>
                     </tr>
                   </tbody>
                 </table>
