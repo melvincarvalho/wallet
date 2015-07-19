@@ -29,7 +29,7 @@ var scope = {};
 var gg;
 
 var defaultWallets = ['https://wallet.databox.me/Public/.wallet/github.com/melvincarvalho/wallet/wallet#this',
-  'https://wallet.databox.me/Public/.wallet/github.com/linkeddata/SoLiD/wallet#this'];
+  'https://gitpay.databox.me/Public/.wallet/github.com/linkeddata/SoLiD/wallet#this'];
 
 $rdf.Fetcher.crossSiteProxyTemplate=PROXY;
 
@@ -765,11 +765,9 @@ App.controller('Main', function($scope, $http, $location, $timeout, $sce, ngAudi
   };
 
 
-
-
-
-
-
+  // main
+  //
+  //
   $scope.initApp();
 
 });
