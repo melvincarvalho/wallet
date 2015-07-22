@@ -72,7 +72,14 @@ App.controller('Main', function($scope, $http, $location, $timeout, $sce, ngAudi
     $scope.subs = [];
     $scope.sockets = [];
     $scope.selects = {};
-    $scope.main = {'description' : 'wallet'};
+    $scope.mainWallet = {'description' : 'wallet'};
+
+
+    if ($location.search().walletURI) {
+      $scope.wallet = $location.search().walletURI;
+    }
+
+
 
 
     // start browser cache DB
@@ -83,6 +90,13 @@ App.controller('Main', function($scope, $http, $location, $timeout, $sce, ngAudi
     db.open();
 
     $scope.show = {};
+
+    if ($location.search().user) {
+      $scope.loggedIn = true;
+      $scope.user = $location.search().user;
+      fetchAll();
+    }
+
 
   };
 
@@ -124,37 +138,50 @@ App.controller('Main', function($scope, $http, $location, $timeout, $sce, ngAudi
   $scope.renderMain = function () {
   };
 
+  $scope.anyVal = function (s, p) {
+    var val = g.any($rdf.sym(s), p, undefined);
+    if (val) {
+      return val.value;
+    } else {
+      return undefined;
+    }
+  };
+
   $scope.renderProfile = function() {
     if (!$scope.my) return;
     if (!$scope.user) return;
 
-    $scope.my.id = $scope.user;
-
-    var avatar = g.statementsMatching($rdf.sym($scope.my.id), FOAF('img'), undefined);
-    if (!avatar.length) {
-      avatar = g.statementsMatching($rdf.sym($scope.my.id), FOAF('depiction'), undefined);
-    }
-    if (avatar.length) {
-      $scope.my.picture = avatar[0].object.value;
+    if (!$scope.my.id) {
+      $scope.my.id = $scope.user;
     }
 
-    var name = g.statementsMatching($rdf.sym($scope.my.id), FOAF('name'), undefined);
-    if (name.length) {
-      $scope.my.name = name[0].object.value;
+    if (!$scope.my.picture) {
+      $scope.my.picture = $scope.anyVal($scope.my.id, FOAF('img'));
+    }
+
+    if (!$scope.my.picture) {
+      $scope.my.picture = $scope.anyVal($scope.my.id, FOAF('depiction'));
+    }
+
+    if (!$scope.my.name) {
+      $scope.my.name = $scope.anyVal($scope.my.id, FOAF('name'));
     }
 
   };
 
   $scope.renderWallet = function() {
     if (!$scope.wallet) return;
+    if (!$scope.wallets) return;
 
     var wallet = getById($scope.wallets, $scope.wallet);
-
-    $scope.main = wallet;
+    $scope.mainWallet = wallet;
+    $location.search('walletURI', $scope.wallet);
 
   };
 
   $scope.renderFriends = function() {
+    if (!$scope.knows) return;
+
     for (var i=0; i<$scope.knows.length; i++) {
 
       var avatar = g.statementsMatching($rdf.sym($scope.knows[i]), FOAF('img'), undefined);
@@ -162,14 +189,24 @@ App.controller('Main', function($scope, $http, $location, $timeout, $sce, ngAudi
         avatar = g.statementsMatching($rdf.sym($scope.knows[i]), FOAF('depiction'), undefined);
       }
 
-      var name = g.statementsMatching($rdf.sym($scope.knows[i]), FOAF('name'), undefined);
-
-      var friend = { 'id' : $scope.knows[i] };
-      if (name.length) {
-        friend.name = name[0].object.value;
+      var id = $scope.knows[i];
+      if (!id) continue;
+      var friend = getById($scope.friends, id);
+      if (!friend) {
+        friend = { 'id' : id };
       }
-      if (avatar.length) {
-        friend.picture = avatar[0].object.value;
+
+
+      if (!friend.picture) {
+        friend.picture = $scope.anyVal(id, FOAF('img'));
+      }
+
+      if (!friend.picture) {
+        friend.picture = $scope.anyVal(id, FOAF('depiction'));
+      }
+
+      if (!friend.name) {
+        friend.name = $scope.anyVal(id, FOAF('name'));
       }
 
       addToIds($scope.friends, friend);
@@ -189,29 +226,24 @@ App.controller('Main', function($scope, $http, $location, $timeout, $sce, ngAudi
       var wallet = $scope.wallets[i];
       if (!wallet.id) continue;
 
-      var description = g.statementsMatching($rdf.sym(wallet.id), DCT('description'));
-      if (description.length) {
-        wallet.description = description[0].object.value;
+      if (!wallet.description) {
+        wallet.description = $scope.anyVal(wallet.id, DCT('description'));
       }
 
-      var api = g.statementsMatching($rdf.sym(wallet.id), CURR('api'));
-      if (description.length) {
-        wallet.api = api[0].object.value;
+      if (!wallet.api) {
+        wallet.api = $scope.anyVal(wallet.id, CURR('api'));
       }
 
-      var tx = g.statementsMatching($rdf.sym(wallet.id), CURR('tx'));
-      if (tx.length) {
-        wallet.trades = tx[0].object.value;
+      if (!wallet.trades) {
+        wallet.trades = $scope.anyVal(wallet.id, CURR('tx'));
       }
 
-      var inbox = g.statementsMatching($rdf.sym(wallet.id), CURR('inbox'));
-      if (inbox.length) {
-        wallet.inbox = inbox[0].object.value;
+      if (!wallet.inbox) {
+        wallet.inbox = $scope.anyVal(wallet.id, CURR('inbox'));
       }
 
-      var hasSound = g.statementsMatching($rdf.sym(wallet.id), VCARD('hasSound'));
-      if (hasSound.length) {
-        wallet.hasSound = hasSound[0].object.value;
+      if (!wallet.hasSound) {
+        wallet.hasSound = $scope.anyVal(wallet.id, VCARD('hasSound'));
       }
 
       //console.log($scope.wallets[i]);
@@ -219,6 +251,14 @@ App.controller('Main', function($scope, $http, $location, $timeout, $sce, ngAudi
     }
 
     $scope.wallets.sort(function(a, b){
+      if (a.description > b.description) {
+        return 1;
+      }
+      if (a.description < b.description) {
+        return -1;
+      }
+      // a must be equal to b
+      return 0;
     });
   };
 
@@ -398,10 +438,10 @@ App.controller('Main', function($scope, $http, $location, $timeout, $sce, ngAudi
   }
 
   function fetchBalance() {
-    var balanceURI = $scope.main.api + 'balance?uri=' + encodeURIComponent($scope.user);
+    var balanceURI = $scope.mainWallet.api + 'balance?uri=' + encodeURIComponent($scope.user);
     $http.get(balanceURI).
     success(function(data, status, headers, config) {
-      $scope.main.amount = data.amount;
+      $scope.mainWallet.amount = data.amount;
       var wallet = getById($scope.wallets, $scope.wallet);
       if (!wallet.ledger) {
         wallet.ledger = {};
@@ -416,10 +456,10 @@ App.controller('Main', function($scope, $http, $location, $timeout, $sce, ngAudi
   }
 
   function fetchTx() {
-    var balanceURI = $scope.main.api + 'tx?uri=' + encodeURIComponent($scope.user);
+    var balanceURI = $scope.mainWallet.api + 'tx?uri=' + encodeURIComponent($scope.user);
     $http.get(balanceURI).
     success(function(data, status, headers, config) {
-      $scope.main.tx = data;
+      $scope.mainWallet.tx = data;
       $scope.today = 0;
       for (var i=0; i<data.length; i++) {
         var name = data[i].source;
@@ -533,7 +573,9 @@ App.controller('Main', function($scope, $http, $location, $timeout, $sce, ngAudi
         LxNotificationService.success('Login Successful!');
         $scope.loggedIn = true;
         $scope.user = user;
+        $location.search('user', user);
         fetchAll();
+        $scope.authenticated = true;
       } else {
         LxNotificationService.error('WebID-TLS authentication failed.');
         console.log('WebID-TLS authentication failed.');

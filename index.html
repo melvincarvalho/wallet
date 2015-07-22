@@ -53,12 +53,12 @@
             <i class="mdi mdi-menu"></i>
           </button>
         </div>
-        <span class="toolbar__label fs-title">{{main.description}}</span>
+        <span class="toolbar__label fs-title">{{mainWallet.description}}</span>
         <div>
           <img ng-hide="!my.picture" height="36" width="36" style="border-radius : 50%" ng-src="{{my.picture}}" alt="picture"/>
           <img ng-hide="my.picture" height="36" width="36" style="border-radius : 50%" ng-src="images/generic_photo.png" alt="picture"/>
         </div>
-        <span class="toolbar__right fs-title" style="padding-left: 20px">{{my.name}}</span>
+        <span class="toolbar__right fs-title" style="padding-left: 10px">{{my.name}}</span>
         <div class="toolbar__right">
           <lx-dropdown position="right" from-top>
             <button class="btn btn--l btn--white btn--icon" lx-ripple lx-dropdown-toggle>
@@ -112,7 +112,7 @@
               <div ng-hide="!wallet" class="data-table-container">
                 <header class="data-table-header">
                   <div class="data-table-header__label">
-                    <span ng-hide="isNaN(main.amount)" class="tc-black">Balance: {{main.amount}} (<a href="{{wallet}}">{{main.description}}</a>) <span ng-hide="!today">Today : {{today}}</span></span>
+                    <span ng-hide="isNaN(mainWallet.amount)" class="tc-black">Balance: {{mainWallet.amount}} (<a href="{{wallet}}">{{mainWallet.description}}</a>) <span ng-hide="!today">Today : {{today}}</span></span>
                   </div>
 
                   <div class="data-table-header__actions">
@@ -137,7 +137,7 @@
                   </div>
                 </header>
 
-                <table ng-show="main.tx.length" class="data-table tc-black">
+                <table ng-show="mainWallet.tx.length" class="data-table tc-black">
                   <thead>
                     <tr class="data-table">
                       <th>When</th>
@@ -149,7 +149,7 @@
 
                   <tbody>
 
-                    <tr ng-repeat="t in main.tx" class="data-table">
+                    <tr ng-repeat="t in mainWallet.tx" class="data-table">
                       <td><time is="relative-time" datetime="{{t.timestamp}}"></time></td>
                       <td>{{t.name}}</td>
                       <td class="gold {{t.source === user ? 'minus' : 'plus'}}">{{t.source === user ? -t.amount : t.amount}}</td>
@@ -158,7 +158,7 @@
                     </tr>
                   </tbody>
                 </table>
-                <div ng-hide="main.tx.length" class="data-table tc-black">No Transaction History Yet.</div>
+                <div ng-hide="mainWallet.tx.length" class="data-table tc-black">No Transaction History Yet.</div>
 
               </div>
 
@@ -199,7 +199,7 @@
                 </div>
               </div>
 
-              <button class="btn btn--m btn--blue btn--raised" ng-click="pay()"  lx-ripple>Pay</button>
+              <button ng-show="authenticated" class="btn btn--m btn--blue btn--raised" ng-click="pay()"  lx-ripple>Pay</button>
 
             </lx-tab>
             <!--         -->
@@ -216,7 +216,7 @@
                 </div>
               </div>
 
-              <button class="btn btn--m btn--blue btn--raised" ng-click="withdraw()" lx-ripple>Withdraw</button>
+              <button ng-show="authenticated" class="btn btn--m btn--blue btn--raised" ng-click="withdraw()" lx-ripple>Withdraw</button>
 
             </lx-tab>
           </lx-tabs>
@@ -267,7 +267,7 @@
     <div class="dialog__header">
       <div class="toolbar bgc-blue-A700 pl+">
         <span class="toolbar__label tc-white fs-title">
-          {{main.description}}
+          {{mainWallet.description}}
         </span>
         <div class="toolbar__right">
           <button class="btn btn--l btn--white btn--icon" lx-ripple lx-dialog-close>
