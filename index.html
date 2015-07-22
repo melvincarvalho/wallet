@@ -58,7 +58,7 @@
           <img ng-hide="!my.picture" height="36" width="36" style="border-radius : 50%" ng-src="{{my.picture}}" alt="picture"/>
           <img ng-hide="my.picture" height="36" width="36" style="border-radius : 50%" ng-src="images/generic_photo.png" alt="picture"/>
         </div>
-        <span class="toolbar__right fs-title" style="padding-left: 20px">{{my.name}}</span>
+        <span class="toolbar__right fs-title" style="padding-left: 10px">{{my.name}}</span>
         <div class="toolbar__right">
           <lx-dropdown position="right" from-top>
             <button class="btn btn--l btn--white btn--icon" lx-ripple lx-dropdown-toggle>
@@ -199,7 +199,7 @@
                 </div>
               </div>
 
-              <button class="btn btn--m btn--blue btn--raised" ng-click="pay()"  lx-ripple>Pay</button>
+              <button ng-show="authenticated" class="btn btn--m btn--blue btn--raised" ng-click="pay()"  lx-ripple>Pay</button>
 
             </lx-tab>
             <!--         -->
@@ -216,7 +216,7 @@
                 </div>
               </div>
 
-              <button class="btn btn--m btn--blue btn--raised" ng-click="withdraw()" lx-ripple>Withdraw</button>
+              <button ng-show="authenticated" class="btn btn--m btn--blue btn--raised" ng-click="withdraw()" lx-ripple>Withdraw</button>
 
             </lx-tab>
           </lx-tabs>

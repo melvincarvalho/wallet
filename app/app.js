@@ -75,6 +75,13 @@ App.controller('Main', function($scope, $http, $location, $timeout, $sce, ngAudi
     $scope.mainWallet = {'description' : 'wallet'};
 
 
+    if ($location.search().walletURI) {
+      $scope.wallet = $location.search().walletURI;
+    }
+
+
+
+
     // start browser cache DB
     db = new Dexie("chrome:theSession");
     db.version(1).stores({
@@ -83,6 +90,13 @@ App.controller('Main', function($scope, $http, $location, $timeout, $sce, ngAudi
     db.open();
 
     $scope.show = {};
+
+    if ($location.search().user) {
+      $scope.loggedIn = true;
+      $scope.user = $location.search().user;
+      fetchAll();
+    }
+
 
   };
 
@@ -160,10 +174,8 @@ App.controller('Main', function($scope, $http, $location, $timeout, $sce, ngAudi
     if (!$scope.wallets) return;
 
     var wallet = getById($scope.wallets, $scope.wallet);
-
-    if ($scope.mainWallet !== wallet) {
-      $scope.mainWallet = wallet;
-    }
+    $scope.mainWallet = wallet;
+    $location.search('walletURI', $scope.wallet);
 
   };
 
@@ -561,7 +573,9 @@ App.controller('Main', function($scope, $http, $location, $timeout, $sce, ngAudi
         LxNotificationService.success('Login Successful!');
         $scope.loggedIn = true;
         $scope.user = user;
+        $location.search('user', user);
         fetchAll();
+        $scope.authenticated = true;
       } else {
         LxNotificationService.error('WebID-TLS authentication failed.');
         console.log('WebID-TLS authentication failed.');
